@@ -2,7 +2,7 @@
 
 English | [简体中文](README_zh.md)
 
-A Rust-based LED display controller for OpenWrt devices. This program allows you to control LED matrix displays to show various information including time, date, temperature, and custom text.
+A Rust port of [athena-led](https://github.com/NONGFAH/athena-led) for controlling LED matrix displays on OpenWrt devices.
 
 ## Features
 

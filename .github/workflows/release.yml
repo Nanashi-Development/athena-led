@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build Release
+    runs-on: ubuntu-latest
+    container:
+      image: rust:slim
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y \
+          gcc-aarch64-linux-gnu \
+          g++-aarch64-linux-gnu \
+          musl-tools \
+          pkg-config \
+          gettext-base \
+          --no-install-recommends
+
+      - name: Add target
+        run: rustup target add aarch64-unknown-linux-musl
+
+      - name: Set environment variables
+        run: |
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CC_aarch64_unknown_linux_musl=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX_aarch64_unknown_linux_musl=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "RUST_VERSION=$(rustc --version)" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Generate changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          # Function to get commits by type
+          get_commits_by_type() {
+            local type=$1
+            local range=$2
+            git log --pretty=format:"* %s" --grep="^$type:" "$range" | sed "s/^* $type: /* /"
+          }
+          
+          # Get commit range
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="$GITHUB_SHA"
+          else
+            RANGE="$PREV_TAG..$GITHUB_SHA"
+          fi
+          
+          # Generate categorized changes
+          echo "FEAT_CHANGES<<EOF" >> $GITHUB_ENV
+          get_commits_by_type "feat" "$RANGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          echo "FIX_CHANGES<<EOF" >> $GITHUB_ENV
+          get_commits_by_type "fix" "$RANGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          echo "DOC_CHANGES<<EOF" >> $GITHUB_ENV
+          get_commits_by_type "docs" "$RANGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          echo "PERF_CHANGES<<EOF" >> $GITHUB_ENV
+          get_commits_by_type "perf" "$RANGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          echo "OTHER_CHANGES<<EOF" >> $GITHUB_ENV
+          git log --pretty=format:"* %s" "$RANGE" | grep -vE "^* (feat|fix|docs|perf):" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          cargo build --target aarch64-unknown-linux-musl --release
+          mkdir -p release
+          cp target/aarch64-unknown-linux-musl/release/athena-led release/
+          cd release && tar czf athena-led-aarch64-musl.tar.gz athena-led
+          echo "SHA256SUM=$(sha256sum athena-led-aarch64-musl.tar.gz)" >> $GITHUB_ENV
+
+      - name: Generate release notes
+        run: |
+          envsubst < .github/release-template.md > release/RELEASE_NOTES.md
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/athena-led-aarch64-musl.tar.gz
+          body_path: release/RELEASE_NOTES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
