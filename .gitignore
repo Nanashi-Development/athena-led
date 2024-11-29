@@ -24,3 +24,7 @@ cross/
 ._*
 .Spotlight-V100
 .Trashes
+
+# Local test scripts
+scripts/generate_release_notes.sh
+scripts/test_workflow_in_container.sh

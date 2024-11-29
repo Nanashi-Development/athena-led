@@ -16,19 +16,27 @@ jobs:
       image: rust:slim
     
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
-      - name: Install dependencies
+      - name: Install Git and dependencies
         run: |
           apt-get update && apt-get install -y \
+          git \
           gcc-aarch64-linux-gnu \
           g++-aarch64-linux-gnu \
           musl-tools \
           pkg-config \
           gettext-base \
           --no-install-recommends
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup git
+        run: |
+          git config --global --add safe.directory /__w/athena-led/athena-led
+          git fetch --tags -f
 
       - name: Add target
         run: rustup target add aarch64-unknown-linux-musl
@@ -43,15 +51,19 @@ jobs:
           echo "BUILD_DATE=$(date -u +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Generate changelog
+        id: changelog
+        working-directory: ${{ github.workspace }}
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
           # Function to get commits by type
           get_commits_by_type() {
             local type=$1
             local range=$2
-            git log --pretty=format:"* %s" --grep="^$type:" "$range" | sed "s/^* $type: /* /"
+            git log --pretty=format:"* %s" --grep="^$type:" "$range" | \
+            grep -vE "(workflow|ci:|test:|chore:|release|configuration|checkout|action|git)" || true | \
+            sed "s/^* $type: /* /"
           }
+          
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           
           # Get commit range
           if [ -z "$PREV_TAG" ]; then
@@ -60,26 +72,23 @@ jobs:
             RANGE="$PREV_TAG..$GITHUB_SHA"
           fi
           
-          # Generate categorized changes
-          echo "FEAT_CHANGES<<EOF" >> $GITHUB_ENV
-          get_commits_by_type "feat" "$RANGE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Generate categorized changes and save to temporary files
+          get_commits_by_type "feat" "$RANGE" > feat_changes.txt
+          get_commits_by_type "fix" "$RANGE" > fix_changes.txt
+          get_commits_by_type "docs" "$RANGE" > doc_changes.txt
+          get_commits_by_type "perf" "$RANGE" > perf_changes.txt
           
-          echo "FIX_CHANGES<<EOF" >> $GITHUB_ENV
-          get_commits_by_type "fix" "$RANGE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Handle other changes
+          git log --pretty=format:"* %s" "$RANGE" | \
+            (grep -vE "^\* (feat|fix|docs|perf|test|ci|chore):" || true) | \
+            (grep -vE "(workflow|configuration|setup|Initial commit|release|changelog|template|checkout|action|git)" || true) > other_changes.txt
           
-          echo "DOC_CHANGES<<EOF" >> $GITHUB_ENV
-          get_commits_by_type "docs" "$RANGE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          
-          echo "PERF_CHANGES<<EOF" >> $GITHUB_ENV
-          get_commits_by_type "perf" "$RANGE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          
-          echo "OTHER_CHANGES<<EOF" >> $GITHUB_ENV
-          git log --pretty=format:"* %s" "$RANGE" | grep -vE "^* (feat|fix|docs|perf):" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Read files and set outputs
+          echo "feat_changes=$(cat feat_changes.txt)" >> $GITHUB_OUTPUT
+          echo "fix_changes=$(cat fix_changes.txt)" >> $GITHUB_OUTPUT
+          echo "doc_changes=$(cat doc_changes.txt)" >> $GITHUB_OUTPUT
+          echo "perf_changes=$(cat perf_changes.txt)" >> $GITHUB_OUTPUT
+          echo "other_changes=$(cat other_changes.txt)" >> $GITHUB_OUTPUT
 
       - name: Build
         run: |
@@ -91,12 +100,63 @@ jobs:
 
       - name: Generate release notes
         run: |
-          envsubst < .github/release-template.md > release/RELEASE_NOTES.md
-          
+          {
+            echo "# Athena LED ${{ github.ref_name }}"
+            echo
+            echo "## Changes"
+            
+            if [ -n "${{ steps.changelog.outputs.feat_changes }}" ]; then
+              echo "### New Features"
+              echo "${{ steps.changelog.outputs.feat_changes }}"
+              echo
+            fi
+            
+            if [ -n "${{ steps.changelog.outputs.fix_changes }}" ]; then
+              echo "### Bug Fixes"
+              echo "${{ steps.changelog.outputs.fix_changes }}"
+              echo
+            fi
+            
+            if [ -n "${{ steps.changelog.outputs.doc_changes }}" ]; then
+              echo "### Documentation"
+              echo "${{ steps.changelog.outputs.doc_changes }}"
+              echo
+            fi
+            
+            if [ -n "${{ steps.changelog.outputs.perf_changes }}" ]; then
+              echo "### Performance Improvements"
+              echo "${{ steps.changelog.outputs.perf_changes }}"
+              echo
+            fi
+            
+            if [ -n "${{ steps.changelog.outputs.other_changes }}" ]; then
+              echo "### Other Changes"
+              echo "${{ steps.changelog.outputs.other_changes }}"
+              echo
+            fi
+            
+            echo "## Checksums"
+            echo "\`\`\`"
+            echo "$SHA256SUM"
+            echo "\`\`\`"
+            echo ""
+            
+            echo "## Build Information"
+            echo "- Target: aarch64-unknown-linux-musl"
+            echo "- Rust Version: $RUST_VERSION"
+            echo "- Build Date: $BUILD_DATE"
+            echo ""
+            
+            echo "## Support"
+            echo "If you encounter any issues, please report them on [GitHub Issues](https://github.com/haipengno1/athena-led/issues)."
+          } > release/RELEASE_NOTES.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: release/athena-led-aarch64-musl.tar.gz
           body_path: release/RELEASE_NOTES.md
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
