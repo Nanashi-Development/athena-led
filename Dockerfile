@@ -14,7 +14,6 @@ RUN rustup target add aarch64-unknown-linux-musl
 
 # 创建新的用户和工作目录
 RUN useradd -m -u 1000 rust
-USER rust
 WORKDIR /home/rust/athena-led
 
 # 设置交叉编译环境变量
@@ -22,22 +21,24 @@ ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc \
     CC_aarch64_unknown_linux_musl=aarch64-linux-gnu-gcc \
     CXX_aarch64_unknown_linux_musl=aarch64-linux-gnu-g++
 
-# 首先复制 Cargo.toml 和 Cargo.lock
-COPY --chown=rust:rust Cargo.toml Cargo.lock ./
+# 创建并设置缓存目录权限
+RUN mkdir -p target && chown rust:rust target
 
-# 创建一个虚拟的 src 目录和主文件，以便缓存依赖项
+# 创建缓存层：复制依赖文件并预编译依赖
+COPY --chown=rust:rust Cargo.toml Cargo.lock ./
+RUN chown rust:rust . 
+USER rust
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \
     cargo build --target aarch64-unknown-linux-musl --release && \
     rm -rf src target/aarch64-unknown-linux-musl/release/deps/athena_led*
 
-# 复制实际的源代码
+# 创建构建层：复制源代码并构建
 COPY --chown=rust:rust src ./src/
-
-# 构建项目
 RUN cargo build --target aarch64-unknown-linux-musl --release && \
     mkdir -p /home/rust/release && \
     cp target/aarch64-unknown-linux-musl/release/athena-led /home/rust/release/
 
-# 保持容器运行
-CMD ["tail", "-f", "/dev/null"]
+# 创建最终镜像
+FROM scratch
+COPY --from=0 /home/rust/release/athena-led /athena-led

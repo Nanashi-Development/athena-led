@@ -139,16 +139,6 @@ jobs:
             echo "\`\`\`"
             echo "$SHA256SUM"
             echo "\`\`\`"
-            echo ""
-            
-            echo "## Build Information"
-            echo "- Target: aarch64-unknown-linux-musl"
-            echo "- Rust Version: $RUST_VERSION"
-            echo "- Build Date: $BUILD_DATE"
-            echo ""
-            
-            echo "## Support"
-            echo "If you encounter any issues, please report them on [GitHub Issues](https://github.com/haipengno1/athena-led/issues)."
           } > release/RELEASE_NOTES.md
 
       - name: Create Release
