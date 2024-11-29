@@ -34,38 +34,29 @@ This project supports cross-compilation for OpenWrt devices using Docker/Podman.
 
 ### Building
 
-1. Build the container image:
+The project includes a build script that handles the entire cross-compilation process:
+
 ```bash
-podman build -t athena-led-builder .
+./scripts/aarch64-unknown-linux-musl-build.sh
 ```
 
-2. Run the container and build the project:
-```bash
-# Run container
-podman run -d --name athena-led-build athena-led-builder
+The script will:
+1. Create necessary output directories
+2. Build the container image with all required dependencies
+3. Compile the project for aarch64-unknown-linux-musl target
+4. Extract the compiled binary
 
-# Copy the compiled binary
-podman cp athena-led-build:/home/rust/release/athena-led ./output/aarch64-unknown-linux-musl/
-
-# Clean up
-podman rm -f athena-led-build
-```
-
-The compiled binary will be available in `output/aarch64-unknown-linux-musl/athena-led`.
+The final binary will be available at `output/aarch64-unknown-linux-musl/athena-led`.
 
 ### Technical Details
 
 - Target: `aarch64-unknown-linux-musl`
 - Libc: musl (for better compatibility with OpenWrt)
 - Static linking: All dependencies are statically linked
+- Binary size: ~2.2M (optimized for size)
 - Toolchain:
   - Cross compiler: gcc-aarch64-linux-gnu
-  - Environment variables:
-    ```
-    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
-    CC_aarch64_unknown_linux_musl=aarch64-linux-gnu-gcc
-    CXX_aarch64_unknown_linux_musl=aarch64-linux-gnu-g++
-    ```
+  - Environment variables are automatically set by the build script
 
 ## Installation
 

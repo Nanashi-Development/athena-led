@@ -34,38 +34,29 @@
 
 ### 构建步骤
 
-1. 构建容器镜像：
+项目包含了一个处理整个交叉编译过程的构建脚本：
+
 ```bash
-podman build -t athena-led-builder .
+./scripts/aarch64-unknown-linux-musl-build.sh
 ```
 
-2. 运行容器并构建项目：
-```bash
-# 运行容器
-podman run -d --name athena-led-build athena-led-builder
+该脚本会：
+1. 创建必要的输出目录
+2. 构建包含所有必需依赖的容器镜像
+3. 为 aarch64-unknown-linux-musl 目标编译项目
+4. 提取编译好的二进制文件
 
-# 复制编译好的二进制文件
-podman cp athena-led-build:/home/rust/release/athena-led ./output/aarch64-unknown-linux-musl/
-
-# 清理容器
-podman rm -f athena-led-build
-```
-
-编译好的二进制文件将位于 `output/aarch64-unknown-linux-musl/athena-led`。
+最终的二进制文件将位于 `output/aarch64-unknown-linux-musl/athena-led`。
 
 ### 技术细节
 
 - 目标架构：`aarch64-unknown-linux-musl`
 - 运行时库：musl（更好地兼容 OpenWrt）
 - 静态链接：所有依赖都静态链接
+- 二进制大小：约 2.2M（经过大小优化）
 - 工具链：
   - 交叉编译器：gcc-aarch64-linux-gnu
-  - 环境变量：
-    ```
-    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
-    CC_aarch64_unknown_linux_musl=aarch64-linux-gnu-gcc
-    CXX_aarch64_unknown_linux_musl=aarch64-linux-gnu-g++
-    ```
+  - 环境变量由构建脚本自动设置
 
 ## 安装说明
 
