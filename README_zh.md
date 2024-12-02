@@ -70,10 +70,11 @@ athena-led [选项]
 选项说明：
     --status <状态>            设置状态字符串 [默认: ""]
     --seconds <秒数>           更新间隔（秒） [默认: 5]
-    --light-level <亮度>       设置亮度级别（0-255） [默认: 5]
+    --light-level <亮度>       设置亮度级别（0-7） [默认: 5]
     --option <选项>            显示模式（如 "date"、"timeBlink"） [默认: "date timeBlink"]
     --value <值>              自定义显示字符 [默认: "abcdefghijklmnopqrstuvwxyz0123456789+-*/=.:：℃"]
     --url <URL>               状态监控的 URL [默认: "https://www.baidu.com/"]
+    --temp-flag <标志>         温度传感器标志（0:nss-top, 1:nss, 2:wcss-phya0, 3:wcss-phya1, 4:cpu, 5:lpass, 6:ddrss） [默认: "4"]
 ```
 
 ## 开源许可

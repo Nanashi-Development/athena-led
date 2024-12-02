@@ -7,6 +7,8 @@ use chrono::Local;
 use clap::Parser;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::time;
+use std::env;
+use std::fs;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -33,8 +35,40 @@ struct Args {
     temp_flag: String,
 }
 
+fn set_timezone_from_config() -> Result<()> {
+    // 读取 OpenWrt 系统配置文件
+    let content = fs::read_to_string("/etc/config/system")
+        .context("Failed to read system config")?;
+
+    // 解析配置文件找到时区设置
+    for line in content.lines() {
+        let line = line.trim();
+        if line.starts_with("option timezone") {
+            if let Some(tz) = line.split('\'').nth(1) {
+                // OpenWrt 使用 CST-8 格式表示东八区
+                if tz == "CST-8" {
+                    env::set_var("TZ", "Asia/Shanghai");
+                    return Ok(());
+                }
+            }
+        } else if line.starts_with("option zonename") {
+            if let Some(zone) = line.split('\'').nth(1) {
+                env::set_var("TZ", zone);
+                return Ok(());
+            }
+        }
+    }
+    
+    // 如果没有找到时区设置，使用默认值
+    env::set_var("TZ", "UTC");
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    // 设置时区
+    set_timezone_from_config()?;
+    
     let args = Args::parse();
     
     let mut screen = led_screen::LedScreen::new(581, 582, 585, 586)

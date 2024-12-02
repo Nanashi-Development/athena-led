@@ -70,10 +70,11 @@ athena-led [OPTIONS]
 Options:
     --status <STATUS>          Set status string [default: ""]
     --seconds <SECONDS>        Update interval in seconds [default: 5]
-    --light-level <LEVEL>      Set brightness level (0-255) [default: 5]
+    --light-level <LEVEL>      Set brightness level (0-7) [default: 5]
     --option <OPTION>          Display mode (e.g., "date", "timeBlink") [default: "date timeBlink"]
     --value <VALUE>           Custom display characters [default: "abcdefghijklmnopqrstuvwxyz0123456789+-*/=.:：℃"]
     --url <URL>               URL for status monitoring [default: "https://www.baidu.com/"]
+    --temp-flag <FLAG>        Temperature sensor flag (0:nss-top, 1:nss, 2:wcss-phya0, 3:wcss-phya1, 4:cpu, 5:lpass, 6:ddrss) [default: "4"]
 ```
 
 ## License
