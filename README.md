@@ -18,9 +18,11 @@ A Rust port of [athena-led](https://github.com/NONGFAH/athena-led) for controlli
 1. Make sure you have Rust and Cargo installed
 2. For cross-compilation to OpenWrt (typically ARM architecture), set up your cross-compilation environment
 3. Build the project:
+
    ```bash
    cargo build --release
    ```
+
 4. The compiled binary will be in `target/release/athena-led`
 
 ## Cross Compilation
@@ -32,7 +34,7 @@ This project supports cross-compilation for OpenWrt devices using Docker/Podman.
 - Docker or Podman installed
 - Basic understanding of container operations
 
-### Building
+### Build Steps
 
 The project includes a build script that handles the entire cross-compilation process:
 
@@ -41,6 +43,7 @@ The project includes a build script that handles the entire cross-compilation pr
 ```
 
 The script will:
+
 1. Create necessary output directories
 2. Build the container image with all required dependencies
 3. Compile the project for aarch64-unknown-linux-musl target

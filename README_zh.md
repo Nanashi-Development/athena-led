@@ -18,16 +18,18 @@
 1. 确保已安装 Rust 和 Cargo
 2. 针对 OpenWrt（通常为 ARM 架构）设置交叉编译环境
 3. 构建项目：
+
    ```bash
    cargo build --release
    ```
+
 4. 编译后的二进制文件位于 `target/release/athena-led`
 
 ## 交叉编译
 
 本项目支持使用 Docker/Podman 进行 OpenWrt 设备的交叉编译。目标架构为 `aarch64-unknown-linux-musl`。
 
-### 前置要求
+### 环境要求
 
 - 安装 Docker 或 Podman
 - 基本了解容器操作
@@ -41,6 +43,7 @@
 ```
 
 该脚本会：
+
 1. 创建必要的输出目录
 2. 构建包含所有必需依赖的容器镜像
 3. 为 aarch64-unknown-linux-musl 目标编译项目
