@@ -77,6 +77,13 @@ Options:
     --temp-flag <FLAG>        Temperature sensor flag (0:nss-top, 1:nss, 2:wcss-phya0, 3:wcss-phya1, 4:cpu, 5:lpass, 6:ddrss) [default: "4"]
 ```
 
+## FAQ
+
+1. **Time Display Issues**  
+   If the displayed time doesn't match your system timezone, please ensure the required timezone data packages are installed on your system:
+   - For OpenWrt: Install `zoneinfo-core` and your region's package (e.g., `zoneinfo-asia`)
+   - For other Linux distributions: Install `tzdata` package
+
 ## License
 
 This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.

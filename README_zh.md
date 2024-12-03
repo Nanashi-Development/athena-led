@@ -77,6 +77,13 @@ athena-led [选项]
     --temp-flag <标志>         温度传感器标志（0:nss-top, 1:nss, 2:wcss-phya0, 3:wcss-phya1, 4:cpu, 5:lpass, 6:ddrss） [默认: "4"]
 ```
 
+## 常见问题
+
+1. **时间显示问题**  
+   如果显示的时间与系统时区不匹配，请确保系统已安装所需的时区数据包：
+   - OpenWrt 系统：安装 `zoneinfo-core` 和对应地区的包（如 `zoneinfo-asia`）
+   - 其他 Linux 发行版：安装 `tzdata` 包
+
 ## 开源许可
 
 本项目采用 Apache License 2.0 许可证 - 详见 [LICENSE](LICENSE) 文件。
