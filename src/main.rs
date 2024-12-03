@@ -94,9 +94,18 @@ async fn main() -> Result<()> {
     
     loop {
         tokio::select! {
-            _ = sigterm.recv() => break,
-            _ = sigint.recv() => break,
-            _ = sighup.recv() => break,
+            _ = sigterm.recv() => {
+                screen.power(false, 0)?;
+                break;
+            },
+            _ = sigint.recv() => {
+                screen.power(false, 0)?;
+                break;
+            },
+            _ = sighup.recv() => {
+                screen.power(false, 0)?;
+                break;
+            },
             _ = process_options(&mut screen, &args, status_flag) => {},
         }
     }
