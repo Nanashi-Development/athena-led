@@ -95,8 +95,8 @@ jobs:
           cargo build --target aarch64-unknown-linux-musl --release
           mkdir -p release
           cp target/aarch64-unknown-linux-musl/release/athena-led release/
-          cd release && tar czf athena-led-aarch64-musl.tar.gz athena-led
-          echo "SHA256SUM=$(sha256sum athena-led-aarch64-musl.tar.gz)" >> $GITHUB_ENV
+          cd release && tar czf athena-led-aarch64-musl-v${VERSION}.tar.gz athena-led
+          echo "SHA256SUM=$(sha256sum athena-led-aarch64-musl-v${VERSION}.tar.gz)" >> $GITHUB_ENV
 
       - name: Generate release notes
         run: |
@@ -144,7 +144,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: release/athena-led-aarch64-musl.tar.gz
+          files: release/athena-led-aarch64-musl-v${{ env.VERSION }}.tar.gz
           body_path: release/RELEASE_NOTES.md
           draft: false
           prerelease: false
