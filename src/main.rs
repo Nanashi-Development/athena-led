@@ -122,7 +122,9 @@ async fn process_options(screen: &mut led_screen::LedScreen, args: &Args, status
                 time::sleep(Duration::from_secs(args.seconds)).await;
             }
             "time" => {
-                let time = Local::now().format("%H:%M").to_string();
+                let mut time = Local::now().format("%H:%M").to_string();
+                time.insert(2, ' '); //优化可读性
+                time.insert(5, ' '); //优化可读性
                 screen.write_data(time.as_bytes(), status)?;
                 time::sleep(Duration::from_secs(args.seconds)).await;
             }
