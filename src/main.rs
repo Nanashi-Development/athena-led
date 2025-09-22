@@ -133,8 +133,10 @@ async fn process_options(screen: &mut led_screen::LedScreen, args: &Args, status
                 let mut time_flag = false;
                 while start.elapsed() < Duration::from_secs(args.seconds) {
                     let mut time = Local::now().format("%H:%M").to_string();
+                    time.insert(1, ' '); //优化可读性
+                    time.insert(5, ' '); //优化可读性
                     if time_flag {
-                        time = time.replace(':', "  ");
+                        time = time.replace(':', "   ");
                     }
                     screen.write_data(time.as_bytes(), status)?;
                     time_flag = !time_flag;
